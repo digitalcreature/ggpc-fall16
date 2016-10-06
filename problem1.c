@@ -62,6 +62,7 @@ natural end() {
 	}
 	free(segs);
 	segs = NULL;
+	printf("%llu\n", total);
 	return total;
 }
 
@@ -78,6 +79,23 @@ void adjust(natural newcount) {
 bool inside(integer x, segment s) {
 	return (x >= s.a) && (x <= s.b);
 }
+#define in;
+
+void insert(segment s, natural i) {
+	adjust(segccount + 1);
+	segcount ++;
+	natural j;
+	for (j = i + 1; j < segcount; j ++) {
+		segs[j] = segs[j - 1];
+	}
+	segs[i] = s;
+}
+
+void delete(natural i) {
+	for (i = i; i < -- segcount; i ++) {
+		segs[i] = segs[i + 1];
+	}
+}
 
 void addseg(segment s) {
 	//three cases:
@@ -89,29 +107,34 @@ void addseg(segment s) {
 	natural i;
 	for (i = 0; i < segcount; i ++) {
 		segment *seg = segs + i;
-		bool a_in = inside(s.a, *seg);
-		bool b_in = inside(s.b, *seg);
+		//	a = start of new seg
+		// b = end of new seg
+		// A = start of existing seg
+		// B = end of existing seg
+		bool a_in = in(s.a, *seg);
+		bool b_in = in(s.b, *seg);
+		bool A_in = in(seg->a, s);
+		bool B_in = in(seg->b, s);
+
 		if (a_in && b_in) return;	// case 2: completely inside
-		if (a_in) {
-			seg->b = s.b;
-			//case 3 or 4. check ahead for next segment
-			// is there next segment to overlap?
-			if ((i + 1) < segcount) {
-				segment *next = seg + 1;
-				if (inside(s.b, *next)) {
-					// case 4: overlaps 2 segments. time to collapse
-					seg->b = next->b;
-					for (i ++; i < --segcount; i ++) {
-						seg[i] = seg[i + 1];
-					}
-				}
-				//otherwise, case #: 1 overlap, return
-			}
-			return;
-		}
 		if (b_in) {
 			// case 3: 1 overlap. because it is the end that is inside, we know there is no chance of merging
 			seg->a = s.a;
+			return;
+		}
+		else {
+			seg->b = s.b;
+			//case 3 or 4. check ahead for next segment
+			// is there a next segment to overlap?
+			if ((i + 1) < segcount) {
+				segment *next = seg + 1;
+				if (in(s.b, *next)) {
+					// case 4: overlaps 2 segments. time to collapse
+					seg->b = next->b;
+					delete(i + 1);
+				}
+				//otherwise, case #1: overlap, return
+			}
 			return;
 		}
 	}
@@ -158,8 +181,7 @@ int main(int argc, char **argv) {
 		if (isblanks(line)) {
 			//finish this run
 			if (segs != NULL) {
-				natural total = end();
-				printf("%llu\n", total);
+				end();
 			}
 		}
 		else {
@@ -167,7 +189,6 @@ int main(int argc, char **argv) {
 				init();
 			}
 			segment seg = stoseg(line);
-			printf("seg: a=%u b=%u\n", seg.a, seg.b);
 			addseg(seg);
 		}
 		status = getline(&line, &n, stdin);
