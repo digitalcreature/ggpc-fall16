@@ -12,7 +12,7 @@ typedef struct segment {
 
 typedef unsigned char bool;
 
-void *pmalloc(size_t size) {
+void *malloc_checked(size_t size) {
 	void *block = malloc(size);
 	if (block) {
 		return block;
@@ -24,7 +24,7 @@ void *pmalloc(size_t size) {
 	}
 }
 
-void *prealloc(void *block, size_t size) {
+void *realloc_checked(void *block, size_t size) {
 	block = realloc(block, size);
 	if (block) {
 		return block;
@@ -36,8 +36,8 @@ void *prealloc(void *block, size_t size) {
 	}
 }
 
-#define malloc pmalloc
-#define realloc prealloc
+#define malloc malloc_checked
+#define realloc realloc_checked
 
 #define INITIAL_CAP 16
 #define LOAD_FACTOR 1.5f
