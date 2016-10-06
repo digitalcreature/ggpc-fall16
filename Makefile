@@ -1,4 +1,4 @@
-OPTIONS=-Wall
+OPTIONS=-Wall -g
 problem1: clean1
 	gcc problem1.c -o problem1 $(OPTIONS)
 problem2: clean2
