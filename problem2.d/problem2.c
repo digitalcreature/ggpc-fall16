@@ -235,7 +235,7 @@ void addtoken(program *p, token t) {
 			if (p->instrcount == p->instrcap) {
 				//before adding the instruction, make sure we have enough room by growing the dynamic array if needed
 				p->instrcap*= 1.5f;
-				realloc(p->instructions, p->instrcap);
+				realloc(p->instructions, p->instrcap * sizeof(instruction));
 			}
 			//append the instruction
 			p->instructions[p->instrcount++] = t.instr;
@@ -298,7 +298,7 @@ void run(program *p) {
 			case OP_SUB:		a = peek(); pop(); b = peek(); pop(); push(a - b); break;
 			case OP_MUL:		a = peek(); pop(); b = peek(); pop(); push(a * b); break;
 			case OP_DIV:		a = peek(); pop(); b = peek(); pop(); push(a / b); break;
-			//rotate top n value up 1
+			//rotate top n values up 1
 			case OP_ROT:
 				a = peek();
 				for (i = sp - 1; i > sp - num; i --) {
