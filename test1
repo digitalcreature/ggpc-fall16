@@ -2,6 +2,7 @@
 
 -- simple test program
 
-f = io.popen("problem1", "w")
-
-f:close()
+for i = 1, 1000 do
+	print(i, i + 1)
+end
+print()
