@@ -76,13 +76,13 @@ void adjust(natural newcount) {
 	}
 }
 
-bool inside(integer x, segment s) {
+bool in(integer x, segment s) {
 	return (x >= s.a) && (x <= s.b);
 }
-#define in;
+
 
 void insert(segment s, natural i) {
-	adjust(segccount + 1);
+	adjust(segcount + 1);
 	segcount ++;
 	natural j;
 	for (j = i + 1; j < segcount; j ++) {
@@ -98,44 +98,15 @@ void delete(natural i) {
 }
 
 void addseg(segment s) {
-	//three cases:
-	// 1: no overlap
-	// 2: completely inside 1 segment, is consumed
-	// 3: overlaps 1 segment, grows it
-	// 4 overlaps 2 segments, joining them
 	if (s.a == s.b) return; //zero length segments dont add anything
 	natural i;
 	for (i = 0; i < segcount; i ++) {
 		segment *seg = segs + i;
-		//	a = start of new seg
-		// b = end of new seg
-		// A = start of existing seg
-		// B = end of existing seg
 		bool a_in = in(s.a, *seg);
 		bool b_in = in(s.b, *seg);
-		bool A_in = in(seg->a, s);
-		bool B_in = in(seg->b, s);
-
-		if (a_in && b_in) return;	// case 2: completely inside
+		if (a_in && b_in) return;
 		if (b_in) {
-			// case 3: 1 overlap. because it is the end that is inside, we know there is no chance of merging
-			seg->a = s.a;
-			return;
-		}
-		else {
-			seg->b = s.b;
-			//case 3 or 4. check ahead for next segment
-			// is there a next segment to overlap?
-			if ((i + 1) < segcount) {
-				segment *next = seg + 1;
-				if (in(s.b, *next)) {
-					// case 4: overlaps 2 segments. time to collapse
-					seg->b = next->b;
-					delete(i + 1);
-				}
-				//otherwise, case #1: overlap, return
-			}
-			return;
+
 		}
 	}
 	//case 1: no overlap
