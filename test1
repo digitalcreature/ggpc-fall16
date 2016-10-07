@@ -1,0 +1,7 @@
+#!/usr/bin/env lua
+
+-- simple test program
+
+f = io.popen("problem1", "w")
+
+f:close()
