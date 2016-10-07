@@ -9,6 +9,6 @@ problem3: clean3
 clean1:
 	rm -f problem1
 clean2:
-	rm -f problem1
+	rm -f problem2
 clean3:
-	rm -f problem1
+	rm -f problem3
