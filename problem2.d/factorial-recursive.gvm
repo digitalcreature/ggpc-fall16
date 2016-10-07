@@ -1,0 +1,40 @@
+# Factorial, implemented recursively.
+#
+# Call fac(5) and fac(12), printing the results,
+# but leaving them on the stack. Then we add them,
+# and print the result.
+#
+# Algorithm is:
+# fac(n):
+#   if (n < 2) return 1
+#   return n * fac(n - 1)
+
+  PUSH 5   # Set up argument
+  CALL fac # Pushes the address of the next line onto the stack
+  PEEK     # prints the top of the stack (n!)
+  PUSH 12  # Set up argument
+  CALL fac # Pushes the address of the next line onto the stack
+  PEEK     # prints the top of the stack
+  ADD      # adds the two factorials together
+  PEEK     # prints the sum
+  HCF      # quit!
+fac:       # ret,n
+  ROT 2    # n,ret
+  DUPE     # n,n,ret
+  PUSH -2  # -2,n,n,ret
+  ADD      # n-2,n,ret
+  BLZ ret1
+  POP      # n,ret
+  DUPE     # n,n,ret
+  PUSH -1  # 1,n,n,ret
+  ADD      # n-1,n,ret
+  CALL fac # fac(n-1) - recursive call
+  MUL      # fac(n-1) * n,ret
+  ROT 2    # ret,result
+  RETURN   # Pops ret off, and then returns
+ret1:      # n-2,n,ret
+  POP      # n,ret
+  POP      # ret
+  PUSH 1   # 1,ret
+  ROT 2    # ret,1
+  RETURN   # Pops ret off, and then returns

@@ -1,0 +1,33 @@
+# Implement Factorial in my fake assembly language
+#
+# Then call fac(5) and fac(6), printing the results,
+# but leaving them on the stack. Then we add them,
+# and print the result.
+# So we print out 120, 720, and 840, then exit.
+
+  PUSH 5   # Set up argument
+  CALL fac # Pushes the address of the next line onto the stack
+  PEEK     # prints the top of the stack (n!)
+  PUSH 6   # Set up argument
+  CALL fac # Pushes the address of the next line onto the stack
+  PEEK     # prints the top of the stack
+  ADD      # adds the two factorials together
+  PEEK     # prints the sum
+  HCF      # quit!
+fac:       # ret,n
+  ROT 2    # n,ret
+  DUPE     # n,n,ret
+loop:
+  PUSH 1   # 1,n,n,ret
+  ROT 2    # n,1,n,ret
+  SUB      # (n-1),n,ret
+  BRZ done # If the top of the stack is zero, branch
+  DUPE     # (n-1),(n-1),n,ret
+  ROT 3    # (n-1),n,(n-1),ret
+  MUL      # n(n-1),(n-1),ret
+  ROT 2    # (n-1),n(n-1),ret
+  BRANCH loop
+done:      # 0,n!,ret
+  POP      # n!,ret
+  ROT 2    # ret,n!
+  RETURN   # Pops ret off, and then returns
