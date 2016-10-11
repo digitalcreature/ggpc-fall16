@@ -236,10 +236,11 @@ void freeprogram(program *p) {
 void addtoken(program *p, token t) {
 	switch (t.type) {
 		case TOKEN_INSTRUCTION:
-			if (p->instrcount == p->instrcap) {
+			if (p->instrcount >= p->instrcap) {
 				//before adding the instruction, make sure we have enough room by growing the dynamic array if needed
-				p->instrcap*= 1.5f;
-				realloc(p->instructions, p->instrcap * sizeof(instruction));
+				p->instrcap *= 1.5f;
+				//i cant believe it but THIS was the problem: i wasn't assigning the realloc'd block
+				p->instructions = realloc(p->instructions, sizeof(instruction) * p->instrcap);
 			}
 			//append the instruction
 			p->instructions[p->instrcount++] = t.instr;
@@ -348,7 +349,7 @@ void run(program *p) {
 //main routine
 int main(int argc, char **argv) {
 	size_t n = 0;	// use n = 0 for getline so we dont have to malloc ourselves
-	char *line;		// pointer to lien buffer
+	char *line = NULL;		// pointer to line buffer
 	program *p = newprogram(); // init program
 	ssize_t status = getline(&line, &n, stdin); // get first line
 	while (status > 0) {
