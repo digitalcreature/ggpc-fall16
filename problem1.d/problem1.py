@@ -1,6 +1,6 @@
 from sys import stdin, stdout
 import re
-class Segment(object):
+class Segment:
 	def __init__(this, a, b):
 		a, b = int(a), int(b)
 		this.a = min(a, b)
@@ -22,15 +22,15 @@ for line in stdin:
 		printsum()
 		segs = []
 	m = p.match(line)
-	if (m):
-		s = Segment(*m.group(1, 2))
+	if m:
+		seg_new = Segment(*m.group(1, 2))
 		segs_new = []
-		for i, seg in enumerate(segs):
-			union = s.union(seg)
+		for seg in segs:
+			union = seg_new.union(seg)
 			if union:
-				s = union
+				seg_new = union
 			else:
 				segs_new.append(seg)
-		segs_new.append(s)
+		segs_new.append(seg_new)
 		segs = segs_new
 printsum()
