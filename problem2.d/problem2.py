@@ -9,9 +9,9 @@ class Program:
 		if isinstance(item, Instruction):
 			item.address = len(this.instructions)
 			this.instructions.append(item)
-			if isinstance(item, Label):
-				item.address = len(this.instructions)
-				this.labels[item.name] = item;
+		if isinstance(item, Label):
+			item.address = len(this.instructions)
+			this.labels[item.name] = item;
 	def link(this):
 		for instruction in this.instructions:
 			if isinstance(instruction.arg, basestring):
@@ -44,24 +44,24 @@ class PEEK(Instruction):
 		print(stack[len(stack) - 1])
 class ADD(Instruction):
 	def execute(this, stack):
-		a = float(stack.pop())
-		b = float(stack.pop())
-		stack.append(int(a + b))
+		a = stack.pop()
+		b = stack.pop()
+		stack.append(a + b)
 class SUB(Instruction):
 	def execute(this, stack):
-		a = float(stack.pop())
-		b = float(stack.pop())
-		stack.append(int(a - b))
+		a = stack.pop()
+		b = stack.pop()
+		stack.append(a - b)
 class MUL(Instruction):
 	def execute(this, stack):
-		a = float(stack.pop())
-		b = float(stack.pop())
-		stack.append(int(a * b))
+		a = stack.pop()
+		b = stack.pop()
+		stack.append(a * b)
 class DIV(Instruction):
 	def execute(this, stack):
-		a = float(stack.pop())
-		b = float(stack.pop())
-		stack.append(int(a / b))
+		a = stack.pop()
+		b = stack.pop()
+		stack.append(a // b)
 class ROT(Instruction):
 	def execute(this, stack):
 		stack.insert(len(stack) - int(this.arg), stack.pop())
