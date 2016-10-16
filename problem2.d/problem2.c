@@ -37,7 +37,7 @@
 
 	#define OPS_COUNT 16
 	#define ID_MAXLEN 32
-	#define STACK_SIZE 32
+	#define STACK_INITCAP 32
 	#define LABELS_MAX 32
 	#define INSTR_INITCAP 32
 
@@ -130,8 +130,9 @@ typedef struct token {
 typedef struct program {
 	label labels[LABELS_MAX];		//this programs labels
 	address labelcount;				//label count
-	number stack[STACK_SIZE];		//stack
+	number *stack;						//stack (dynamic array)
 	address stackp;					//stack pointer
+	address stackcap;					//stack capacity (allocated space)
 	instruction *instructions;		//instructions (dynamic array)
 	address instrcount;				//instruction count
 	address instrcap;					//the capacity if the instructions dynamic array
@@ -211,7 +212,9 @@ token parseline(char *line) {
 program *newprogram() {
 	program *p = malloc(sizeof(program));
 	p->labelcount = 0;
+	p->stack = malloc(sizeof(number) * STACK_INITCAP);
 	p->stackp = 0;
+	p->stackcap = STACK_INITCAP;
 	p->instrcount = 0;
 	p->instrcap = INSTR_INITCAP;
 	p->instructions = malloc(sizeof(instruction) * INSTR_INITCAP);
@@ -222,6 +225,7 @@ program *newprogram() {
 //free the memory of an existing program, destroying it
 void freeprogram(program *p) {
 	free(p->instructions);
+	free(p->stack);
 	free(p);
 }
 
@@ -232,10 +236,11 @@ void freeprogram(program *p) {
 void addtoken(program *p, token t) {
 	switch (t.type) {
 		case TOKEN_INSTRUCTION:
-			if (p->instrcount == p->instrcap) {
+			if (p->instrcount >= p->instrcap) {
 				//before adding the instruction, make sure we have enough room by growing the dynamic array if needed
-				p->instrcap*= 1.5f;
-				realloc(p->instructions, p->instrcap);
+				p->instrcap *= 1.5f;
+				//i cant believe it but THIS was the problem: i wasn't assigning the realloc'd block
+				p->instructions = realloc(p->instructions, sizeof(instruction) * p->instrcap);
 			}
 			//append the instruction
 			p->instructions[p->instrcount++] = t.instr;
@@ -270,6 +275,16 @@ void link(program *p) {
 	}
 }
 
+// push a value to the stack of a program
+// extend the stack capacity if necessary
+void push(program *p, number v) {
+	if (p->stackp == p->stackcap) {
+		p->stackcap *= 1.5f;
+		p->stack = realloc(p->stack, sizeof(number) * p->stackcap);
+	}
+	p->stack[p->stackp ++] = v;
+}
+
 //run the program!
 void run(program *p) {
 	//some handy dandy macros (as usual)
@@ -278,7 +293,7 @@ void run(program *p) {
 		#define ip p->instrp					// ip <=> instruction pointer
 		#define addr instr->arg.a			// addr <=> address argument of current instruction
 		#define num instr->arg.n			// num <=> number argument of current instruction
-		#define push(v) (s[sp ++] = v)	// put v on top of stack
+		#define push(v) push(p, v)			// put v on top of stack
 		#define pop() (-- sp)				// delete top value of stack (do not return it)
 		#define peek() (s[sp - 1])			// return the top value of stack (do not alter stack)
 	number a, b;	//operand locals; for use when neede
@@ -298,7 +313,7 @@ void run(program *p) {
 			case OP_SUB:		a = peek(); pop(); b = peek(); pop(); push(a - b); break;
 			case OP_MUL:		a = peek(); pop(); b = peek(); pop(); push(a * b); break;
 			case OP_DIV:		a = peek(); pop(); b = peek(); pop(); push(a / b); break;
-			//rotate top n value up 1
+			//rotate top n values up 1
 			case OP_ROT:
 				a = peek();
 				for (i = sp - 1; i > sp - num; i --) {
@@ -309,7 +324,7 @@ void run(program *p) {
 			//jump operators (notice how they set ipinc to 0: this is so that the destination address isnt skipped)
 			case OP_CALL:		push(ip + 1); //CALL is the same as BRANCH, just push next instruction pointer first
 			case OP_BRANCH:	ip = addr; ipinc = 0; break;
-			//jump-if operators (just look at the campatison operators)
+			//jump-if operators (just look at the camparison operators)
 			case OP_BRZ:		if (peek() == 0) { ip = addr; ipinc = 0; } break;
 			case OP_BGZ:		if (peek() > 0) { ip = addr; ipinc = 0; } break;
 			case OP_BLZ:		if (peek() < 0) { ip = addr; ipinc = 0; } break;
@@ -334,7 +349,7 @@ void run(program *p) {
 //main routine
 int main(int argc, char **argv) {
 	size_t n = 0;	// use n = 0 for getline so we dont have to malloc ourselves
-	char *line;		// pointer to lien buffer
+	char *line = NULL;		// pointer to line buffer
 	program *p = newprogram(); // init program
 	ssize_t status = getline(&line, &n, stdin); // get first line
 	while (status > 0) {
