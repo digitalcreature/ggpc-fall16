@@ -1,3 +1,5 @@
+-- DEPRECATED
+-- half-finished lua implementation; i'll finish it one day
 
 segs = {}
 
@@ -73,5 +75,5 @@ end
 for line in io.lines() do
 	local running
 	if line:match("%s*") then
-		
+
 end
