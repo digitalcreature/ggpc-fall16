@@ -6,7 +6,7 @@ import re
 
 # Author: Tanner Grehawick
 # Email: tgrehawi@gmail.com
-# Problem 1: Overlapping Segments
+# Problem 2: Stack-based Computer Architecture Simulation
 
 class Program:
 	p_instruction = re.compile(r'\s*([A-Z]+)\s+([+-]?\w*)')
