@@ -24,15 +24,7 @@ class Program:
 			if m:
 				name = m.group(1)
 				if iclasses[name]:
-					arg = m.group(2)
-					if arg:
-						try:
-							arg = int(arg)
-						except:
-							pass
-					else:
-						arg = None
-					this.add(iclasses[name](arg))
+					this.add(iclasses[name](m.group(2)))
 			else:
 				m = this.p_label.match(line)
 				if m:
@@ -63,7 +55,14 @@ class Label:
 		this.name = name
 class Instruction:
 	address = None	# the address at which this instruction occurs
-	def __init__(this, arg=None):
+	def __init__(this, arg = None):
+		if arg:
+			try:
+				arg = int(arg)
+			except:
+				pass
+		else:
+			arg = None
 		this.arg = arg
 class PUSH(Instruction):
 	def execute(this, stack):
