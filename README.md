@@ -9,10 +9,10 @@ Each problem has a seperate folder for it's solutions, and may have zero or more
 All solutions are to be built and run from within their own directories; such as:
 
 ```
-tgrehawi@skaia:ggpc-fall16/problem1 $ make
-tgrehawi@skaia:ggpc-fall16/problem1 $ problem1 < /path/to/input
+tgrehawi@skaia:~/ggpc-fall16/problem1 $ make
+tgrehawi@skaia:~/ggpc-fall16/problem1 $ problem1 < /path/to/input
 ...
-tgrehawi@skaia:ggpc-fall16/problem1 $ make clean
+tgrehawi@skaia:~/ggpc-fall16/problem1 $ make clean
 
 ```
 
