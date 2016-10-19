@@ -1,5 +1,12 @@
+#!/usr/bin/env python
+
 from sys import stdin, stdout
 import re
+
+# Author: Tanner Grehawick
+# Email: tgrehawi@gmail.com
+# Problem 1: Overlapping Segments
+
 class Segment:
 	def __init__(this, a, b):
 		a, b = int(a), int(b)
