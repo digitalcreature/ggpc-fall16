@@ -1,21 +1,22 @@
 #!/usr/bin/env python
 from sys import stdin, stdout
+from itertools import *
 import re
 # Author: Tanner Grehawick
 # Email: tgrehawi@gmail.com
 # Problem 3: Navigating The Flash
-class Pair:
-	__pattern = re.compile(r'\s*(\d+)\s+(\d+)')
+class Pair(object):
+	_pattern = re.compile(r'\s*(\d+)\s+(\d+)')
 	__slots__ = ('r', 'c')
 	def __init__(self, r, c):
 		self.r = int(r or 0)
 		self.c = int(c or 0)
-	@classmethod
-	def read(cls, file):
+	@staticmethod
+	def read(file):
 		line = file.readline()
-		m = cls.__pattern.match(line)
+		m = Pair._pattern.match(line)
 		if m:
-			return cls(*m.group(1, 2))
+			return Pair(*m.group(1, 2))
 	def __repr__(self):
 		return "(%d, %d)" % (self.r, self.c)
 	def neighbors(self):
@@ -23,46 +24,52 @@ class Pair:
 		yield Pair(self.r - 1, self.c)
 		yield Pair(self.r, self.c + 1)
 		yield Pair(self.r, self.c - 1)
-class Node(Pair):
-	def __init__(self, r, c, height, grid):
-		Pair.__init__(self, r, c)
-		self.height = int(height or 0)
-		self.grid = grid
-	def neighbors(self):
-		return (self.grid[n] for n in Pair.neighbors(self) if self.grid[n])
-	def __str__(self):
-		return "<%d>" % self.height
-	def __repr__(self):
-		return "<%s %d>" % (Pair.__repr__(self), self.height)
-class Grid:
-	__pattern = re.compile(r'(\d+)')
-	def __init__(self, rcount, ccount, rowproducer = None):
-		rp = rowproducer
-		self.rows = [
-			rp and rp(self, r) or [None for c in xrange(ccount)]
-			for r in xrange(rcount)
-		]
-	def __getitem__(self, pair):
-		if pair.r in xrange(len(self.rows)):
-			row = self.rows[pair.r]
-			if pair.c in xrange(len(row)):
-				return row[pair.c]
-	def nodes(self):
-		return (node for row in self.rows for node in row)
-	@classmethod
-	def read(cls, file):
+	def __hash__(self):
+		return (self.r << 16) ^ (~self.c)
+	def __eq__(self, other):
+		return self.r == other.r and self.c == other.c
+	def __ne__(self, other):
+		return not (self == other)
+class Grid(dict):
+	_pattern = re.compile(r'\d+')
+	def __init__(self, rcount, ccount):
+		self.rcount = int(rcount)
+		self.ccount = int(ccount)
+	@staticmethod
+	def read(file):
 		size = Pair.read(file)
-		def rowproducer(grid, r):
-			return [
-				Node(r, c, height.group(1), grid)
-				for c, height in enumerate(cls.__pattern.finditer(file.readline()))
-			]
-		return cls(size.r, size.c, rowproducer)
-
+		grid = Grid(size.r, size.c)
+		for r in xrange(size.r):
+			c = 0
+			for cost in Grid._pattern.finditer(file.readline()):
+				pair = Pair(r, c)
+				grid[pair] = Grid.Node(pair, cost.group(), grid)
+				c += 1
+		return grid
 	def __repr__(self):
-		return '\n'.join(
-			" ".join(str(node) for node in row) for row in self.rows
-		)
+		return \
+			"\n".join(":| " +
+				"  ".join(
+					str(self[Pair(r, c)])
+					for c in xrange(self.ccount)
+				) + " |:"
+				for r in xrange(self.rcount)
+			)
+	class Node:
+		def __init__(self, pair, cost, grid):
+			self.pair = pair
+			self.cost = int(cost or 0)
+			self.grid = grid
+		def neighbors(self):
+			return (
+				self.grid[pair]
+				for pair in self.pair.neighbors()
+				if pair in self.grid
+			)
+		def __str__(self):
+			return "<%d>" % self.cost
+		def __repr__(self):
+			return "<%r %d>" % (self.pair, self.cost)
 def main():
 	grid = Grid.read(stdin)
 	start = Pair.read(stdin)
