@@ -14,14 +14,14 @@ class Pair(object):
 	__pattern = re.compile(r'\s*(\d+)\s+(\d+)')
 	__slots__ = ('r', 'c')
 	def __init__(self, r, c):
-		self.r = int(r or 0)
-		self.c = int(c or 0)
+		self.r = int(r)
+		self.c = int(c)
 	@staticmethod
 	def read(file):
 		line = file.readline()
 		m = Pair.__pattern.match(line)
 		if m:
-			return Pair(*m.group(1, 2))
+			return Pair(m.group(1), m.group(2))
 	def __repr__(self):
 		return "(%d, %d)" % (self.r, self.c)
 	def neighbors(self):
@@ -30,7 +30,7 @@ class Pair(object):
 		yield Pair(self.r, self.c + 1)
 		yield Pair(self.r, self.c - 1)
 	def __hash__(self):
-		return (self.r << 16) ^ (~self.c)
+		return (self.r << 21) ^ ~(~self.c << 5)
 	def __eq__(self, other):
 		return self.r == other.r and self.c == other.c
 	def __ne__(self, other):
@@ -74,8 +74,8 @@ class Grid(dict):
 		gscore[start] = 0
 		oset.push(start, 0)
 		while len(oset) > 0:
-			self.printastar(oset, cset, start, goal)
 			node = oset.pop()
+			self.printastar(oset, cset, fscore, start, goal, node)
 			if node == goal:
 				path = set()
 				cost = 0
@@ -85,7 +85,7 @@ class Grid(dict):
 					cost += node.costto(prev)
 					node = prev
 				path.add(start)
-				self.printastar(oset, cset, start, goal, path)
+				self.printastar(oset, cset, fscore, start, goal, node, path)
 				return cost
 			cset.add(node)
 			for neighbor in node.neighbors():
@@ -97,7 +97,7 @@ class Grid(dict):
 						prevnode[neighbor] = node
 						gscore[neighbor] = gscore_est
 	if opt_graphic:
-		def printastar(self, oset, cset, start, goal, path = None):
+		def printastar(self, oset, cset, fscore, start, goal, current, path = None):
 			print
 			reset = "\x1B[0m"
 			for r in xrange(self.rcount):
@@ -105,20 +105,26 @@ class Grid(dict):
 					stdout.write(reset),
 					node = self[Pair(r, c)]
 					color = ""
-					if path and node in path:
-						color = "\x1B[7;32m"
+					text = node.cost
 					if start == node:
 						color = "\x1B[7;34m"
-					if goal == node:
+						text = "starta"
+					elif goal == node:
 						color = "\x1B[7;35m"
-					if node in cset:
+						text = "goal"
+					elif path and node in path:
+						color = "\x1B[7;32m"
+						text = node.cost
+					elif node in cset:
 						color = color or "\x1B[7;31m"
-						stdout.write(color + " x ")
+						text = fscore(node)
 					elif node in oset:
 						color = color or "\x1B[7;33m"
-						stdout.write(color + " o ")
-					else:
-						stdout.write(color + " " + str(node.cost) + " ")
+						text = fscore(node)
+					elif node == current:
+						color = color or "\x1B[7;37m"
+						text = fscore(node)
+					stdout.write(color + "{:^5}".format(text)[:5])
 				print reset
 	else:
 		def printastar(*argv):
