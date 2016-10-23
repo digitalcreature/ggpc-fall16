@@ -128,6 +128,7 @@ class Grid(dict):
 		reset = "\x1B[0m"
 		for r in xrange(self.rcount):
 			for c in xrange(self.ccount):
+				stdout.write(reset),
 				node = self[Pair(r, c)]
 				color = ""
 				if node in path:
@@ -138,12 +139,12 @@ class Grid(dict):
 					color = "\x1B[7;35m"
 				if node in cset:
 					color = color or "\x1B[7;31m"
-					print reset + color + " x",
+					stdout.write(color + " x ")
 				elif node in oset:
 					color = color or "\x1B[7;33m"
-					print reset + color + " o",
+					stdout.write(color + " o ")
 				else:
-					print reset + color + " " + str(node.cost),
+					stdout.write(color + " " + str(node.cost) + " ")
 			print reset
 	class Node:
 		def __init__(self, grid, pair, cost):
