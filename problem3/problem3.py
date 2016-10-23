@@ -1,12 +1,14 @@
 #!/usr/bin/env python
-from sys import stdin, stdout
+from sys import stdin, stdout, argv
 from itertools import *
+from collections import defaultdict
 from heapq import heappush, heappop
 import re
 # Author: Tanner Grehawick
 # Email: tgrehawi@gmail.com
 # Problem 3: Navigating The Flash
 inf = 1e413 # why doesnt python have a builtin infinity constant???
+opt_verbose = "-v" in argv or "--verbose" in argv
 class priorityset():
 	def __init__(self):
 		self.heap = []
@@ -78,40 +80,70 @@ class Grid(dict):
 	def astar(self, start, goal):
 		start = self[start]
 		goal = self[goal]
-		self.Node._goal = goal
-		# gscore = {}
-		# self.Node._gscore = gscore
-		openset = priorityset()
-		for pair in self:
-			self[pair].gscore = inf
-			self[pair].last = None
-		start.gscore = 0
-		openset.push(start)
-		closedset = set()
-		while not openset.empty:
-			node = openset.pop()
-			print repr(node), node.gscore, node.hscore(), node.fscore()
+		prevnode = defaultdict(lambda: None)
+		gscore = defaultdict(lambda: inf)
+		def fscore(node):
+			return gscore[node] + self.heuristic(node, goal)
+		oset = set()
+		cset = set()
+		oset.add(start)
+		gscore[start] = 0
+		while len(oset) > 0:
+			self.printastar(oset, cset, start, goal)
+			node = None
+			fscore_node = None
+			for onode in oset:
+				fscore_onode = fscore(onode)
+				if node:
+					if fscore_onode < fscore_node:
+						node = onode
+						fscore_node = fscore_onode
+				else:
+					node = onode
+					fscore_node = fscore_onode
 			if node == goal:
+				path = set()
 				cost = 0
 				while node != start:
-					print repr(node), node.gscore
-					cost += node.costto(node.last)
-					node = node.last
-				del self.Node._goal
-				# del self.Node._gscore
+					path.add(node)
+					prev = prevnode[node]
+					cost += node.costto(prev)
+					node = prev
+				path.add(start)
+				self.printastar(oset, cset, start, goal, path)
 				return cost
-			closedset.add(node)
+			oset.remove(node)
+			cset.add(node)
 			for neighbor in node.neighbors():
-				if neighbor in closedset:
-					continue
-				newgscore = node.gscore + node.costto(neighbor)
-				if neighbor in openset:
-					if neighbor.gscore < newgscore:
-						continue
+				if neighbor not in cset:
+					gscore_est = gscore[node] + node.costto(neighbor)
+					if neighbor not in oset:
+						oset.add(neighbor)
+					if gscore_est < gscore[neighbor]:
+						prevnode[neighbor] = node
+						gscore[neighbor] = gscore_est
+	def printastar(self, oset, cset, start, goal, path = set()):
+		if not opt_verbose: return
+		print
+		for r in xrange(self.rcount):
+			for c in xrange(self.ccount):
+				node = self[Pair(r, c)]
+				color = ""
+				if node in path:
+					color = "\x1B[7;32m"
+				if start == node:
+					color = "\x1B[7;34m"
+				if goal == node:
+					color = "\x1B[7;35m"
+				if node in cset:
+					color = color or "\x1B[7;31m"
+					print "\x1B[0m" + color + "x",
+				elif node in oset:
+					color = color or "\x1B[7;33m"
+					print "\x1B[0m" + color + "o",
 				else:
-					openset.push(neighbor)
-				neighbor.last = node
-				neighbor.gscore = newgscore
+					print "\x1B[0m" + color + str(node.cost),
+			print "\x1B[0m"
 	class Node:
 		def __init__(self, grid, pair, cost):
 			self.grid = grid
@@ -125,30 +157,12 @@ class Grid(dict):
 			)
 		def costto(self, other):
 			return abs(self.cost - other.cost) + 1
-		# @property
-		# def gscore(self):
-		# 	return self._gscore.get(self, inf)
-		# @gscore.setter
-		# def set_gscore(self, score):
-		# 	self._gscore[self] = score
-		def hscore(self):
-			return self.grid.heuristic(self, self._goal)
-		def fscore(self):
-			return self.gscore + self.hscore()
 		def __str__(self):
 			return "<%d>" % self.cost
 		def __repr__(self):
 			return "<%r %d>" % (self.pair, self.cost)
-		def __lt__(self, other):
-			ret = self.fscore() < other.fscore()
-			print repr(self), repr(other), ret
-			return ret
-		def __eq__(self, other):
-			return self.pair == other.pair
-		def __ne__(self, other):
-			return self.pair != other.pair
 		def __hash__(self):
-			return hash(self.pair)
+			return id(self)
 if __name__ == "__main__":
 	grid = Grid.read(stdin)
 	start = Pair.read(stdin)
@@ -159,8 +173,10 @@ if __name__ == "__main__":
 			goals.append(end)
 		else:
 			break
-	print "grid:\t", str(grid).replace("\n", "\n\t")
-	print "start:\t", repr(grid[start])
+	if opt_verbose:
+		print "grid:\t", str(grid).replace("\n", "\n\t")
+		print "start:\t", repr(grid[start])
 	for goal in goals:
-		print "goal:\t", repr(grid[goal])
+		if opt_verbose:
+			print "goal:\t", repr(grid[goal])
 		print grid.astar(start, goal)
