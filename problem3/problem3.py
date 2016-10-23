@@ -7,8 +7,11 @@ import re
 # Email: tgrehawi@gmail.com
 # Problem 3: Navigating The Flash
 inf = 1e413 # why doesnt python have a builtin infinity constant???
-opt_verbose = "-v" in argv or "--verbose" in argv
-opt_graphic = "-g" in argv or "--graphic" in argv
+opt_verbose = "-v" in argv or "--verbose" in argv	#verbose option: -v or --verbose
+opt_graphic = "-g" in argv or "--graphic" in argv	#graphic option: -g or --graphic (try it, its cool)
+# simple heap-base set that keeps a sort order
+# (i use a set as well so its O(1) instead of O(n)
+#  to check if something is in the heap)
 class PrioritySet:
 	def __init__(self):
 		self.heap = []
@@ -24,12 +27,14 @@ class PrioritySet:
 		return item in self.set
 	def __len__(self):
 		return len(self.set)
+# ordered pair (row, column)
 class Pair(object):
 	__pattern = re.compile(r'\s*(\d+)\s+(\d+)')
 	__slots__ = ('r', 'c')
 	def __init__(self, r, c):
 		self.r = int(r)
 		self.c = int(c)
+	# parse a Pair from a file stream
 	@staticmethod
 	def read(file):
 		line = file.readline()
@@ -38,22 +43,53 @@ class Pair(object):
 			return Pair(m.group(1), m.group(2))
 	def __repr__(self):
 		return "({}, {})".format(self.r, self.c)
+	# iterate over neighbors of this pair
 	def neighbors(self):
+		# no diagonal movement
 		yield Pair(self.r + 1, self.c)
 		yield Pair(self.r - 1, self.c)
 		yield Pair(self.r, self.c + 1)
 		yield Pair(self.r, self.c - 1)
 	def __hash__(self):
+		#just throw binops at it, itll work, right?
 		return (self.r << 21) ^ ~(~self.c << 5)
 	def __eq__(self, other):
 		return self.r == other.r and self.c == other.c
 	def __ne__(self, other):
 		return not (self == other)
+# a grid of nodes
+# (maps Pair => Grid.Node)
 class Grid(dict):
 	__pattern = re.compile(r'\d+')
 	def __init__(self, rcount, ccount):
+		# row and column counts
 		self.rcount = int(rcount)
 		self.ccount = int(ccount)
+	# a single node in the grid
+	# represents a square on the heighmap
+	class Node:
+		def __init__(self, grid, pair, cost):
+			self.grid = grid
+			self.pair = pair
+			# [cost] is the height of the node
+			self.cost = int(cost or 0)
+		def neighbors(self):
+			# only include neighbors that are in the grid
+			return (
+				self.grid[pair]
+				for pair in self.pair.neighbors()
+				if pair in self.grid
+			)
+		def costto(self, other):
+			return abs(self.cost - other.cost) + 1
+		def __str__(self):
+			return "<{}>".format(self.cost)
+		def __repr__(self):
+			return "<{!r} {}>".format(self.pair, self.cost)
+		def __hash__(self):
+			return id(self) # shouldnt this be the default implementation? cmon python
+			# maybe 3.5 is better...
+	# read a grid from a file stream
 	@staticmethod
 	def read(file):
 		size = Pair.read(file)
@@ -74,22 +110,30 @@ class Grid(dict):
 				) + " |:"
 				for r in xrange(self.rcount)
 			)
+	# heuristic function: "how far is it to [goal] from [node]?"
+	# admissable
 	def heuristic(self, node, goal):
+		# manhattan distance (no diagonal movement)
 		return abs(node.pair.r - goal.pair.r) + abs(node.pair.c - goal.pair.c)
+	# find the path from start to goal, using the A* algorithm
+	# returns the total cost of the cheapest path
 	def astar(self, start, goal):
+		# convert Pairs into Nodes
 		start = self[start]
 		goal = self[goal]
-		prevnode = defaultdict(lambda: None)
-		gscore = defaultdict(lambda: inf)
+		# dictionaries mapping Nodes to other stuff
+		prevnode = defaultdict(lambda: None) # keep track of where weve been
+		gscore = defaultdict(lambda: inf) # cost of path from start to [node]
 		def fscore(node):
+			# total cost estimate of path from [start] to [goal] through [node]
 			return gscore[node] + self.heuristic(node, goal)
-		oset = PrioritySet()
-		cset = set()
-		gscore[start] = 0
-		oset.push(start, 0)
+		oset = PrioritySet() # open set: nodes we havent fulle evaluated
+		cset = set() # closed set: nodes for which weve fully evaluated
+		gscore[start] = 0 # [start] to [start] is a 0 cost trip
+		oset.push(start, 0) # start at [start]
 		while len(oset) > 0:
 			node = oset.pop()
-			self.printastar(oset, cset, fscore, start, goal, node)
+			self.printastar(oset, cset, fscore, start, goal, node) # whats this? hmm
 			if node == goal:
 				path = set()
 				cost = 0
@@ -99,7 +143,7 @@ class Grid(dict):
 					cost += node.costto(prev)
 					node = prev
 				path.add(start)
-				self.printastar(oset, cset, fscore, start, goal, node, path)
+				self.printastar(oset, cset, fscore, start, goal, node, path) # there it is again...
 				return cost
 			cset.add(node)
 			for neighbor in node.neighbors():
@@ -111,6 +155,8 @@ class Grid(dict):
 						prevnode[neighbor] = node
 						gscore[neighbor] = gscore_est
 	if opt_graphic:
+		# ah, there it is. prints a graphical representation of the current state of the A* algorithm
+		# (only defined if the --graphic flag is passed)
 		def printastar(self, oset, cset, fscore, start, goal, current, path = None):
 			print
 			reset = "\x1B[0m"
@@ -141,27 +187,9 @@ class Grid(dict):
 					stdout.write(color + "{:^5}".format(text)[:5])
 				print reset
 	else:
+		#if the --graphic option wasnt defined, dont print anything
 		def printastar(*argv):
 			pass
-	class Node:
-		def __init__(self, grid, pair, cost):
-			self.grid = grid
-			self.pair = pair
-			self.cost = int(cost or 0)
-		def neighbors(self):
-			return (
-				self.grid[pair]
-				for pair in self.pair.neighbors()
-				if pair in self.grid
-			)
-		def costto(self, other):
-			return abs(self.cost - other.cost) + 1
-		def __str__(self):
-			return "<{}>".format(self.cost)
-		def __repr__(self):
-			return "<{!r} {}>".format(self.pair, self.cost)
-		def __hash__(self):
-			return id(self)
 if __name__ == "__main__":
 	grid = Grid.read(stdin)
 	start = Pair.read(stdin)
