@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from sys import stdin, stdout, argv
-from itertools import *
+# from itertools import *
 from collections import defaultdict
 from heapq import heappush, heappop
 import re
@@ -9,22 +9,7 @@ import re
 # Problem 3: Navigating The Flash
 inf = 1e413 # why doesnt python have a builtin infinity constant???
 opt_verbose = "-v" in argv or "--verbose" in argv
-class priorityset():
-	def __init__(self):
-		self.heap = []
-		self.set = set()
-	def push(self, item):
-		heappush(self.heap, item)
-		self.set.add(item)
-	def pop(self):
-		item = heappop(self.heap)
-		self.set.remove(item)
-		return item
-	@property
-	def empty(self):
-		return len(self.heap) == 0
-	def __contains__(self, item):
-		return item in self.set
+opt_graphic = "-g" in argv or "--graphic" in argv
 class Pair(object):
 	__pattern = re.compile(r'\s*(\d+)\s+(\d+)')
 	__slots__ = ('r', 'c')
@@ -84,23 +69,13 @@ class Grid(dict):
 		gscore = defaultdict(lambda: inf)
 		def fscore(node):
 			return gscore[node] + self.heuristic(node, goal)
-		oset = set()
+		oset = self.OpenSet()
 		cset = set()
-		oset.add(start)
 		gscore[start] = 0
+		oset.push(start, 0)
 		while len(oset) > 0:
 			self.printastar(oset, cset, start, goal)
-			node = None
-			fscore_node = None
-			for onode in oset:
-				fscore_onode = fscore(onode)
-				if node:
-					if fscore_onode < fscore_node:
-						node = onode
-						fscore_node = fscore_onode
-				else:
-					node = onode
-					fscore_node = fscore_onode
+			node = oset.pop()
 			if node == goal:
 				path = set()
 				cost = 0
@@ -112,40 +87,57 @@ class Grid(dict):
 				path.add(start)
 				self.printastar(oset, cset, start, goal, path)
 				return cost
-			oset.remove(node)
 			cset.add(node)
 			for neighbor in node.neighbors():
 				if neighbor not in cset:
 					gscore_est = gscore[node] + node.costto(neighbor)
-					if neighbor not in oset:
-						oset.add(neighbor)
 					if gscore_est < gscore[neighbor]:
+						if neighbor not in oset:
+							oset.push(neighbor, gscore_est)
 						prevnode[neighbor] = node
 						gscore[neighbor] = gscore_est
-	def printastar(self, oset, cset, start, goal, path = set()):
-		if not opt_verbose: return
-		print
-		reset = "\x1B[0m"
-		for r in xrange(self.rcount):
-			for c in xrange(self.ccount):
-				stdout.write(reset),
-				node = self[Pair(r, c)]
-				color = ""
-				if node in path:
-					color = "\x1B[7;32m"
-				if start == node:
-					color = "\x1B[7;34m"
-				if goal == node:
-					color = "\x1B[7;35m"
-				if node in cset:
-					color = color or "\x1B[7;31m"
-					stdout.write(color + " x ")
-				elif node in oset:
-					color = color or "\x1B[7;33m"
-					stdout.write(color + " o ")
-				else:
-					stdout.write(color + " " + str(node.cost) + " ")
-			print reset
+	if opt_graphic:
+		def printastar(self, oset, cset, start, goal, path = None):
+			print
+			reset = "\x1B[0m"
+			for r in xrange(self.rcount):
+				for c in xrange(self.ccount):
+					stdout.write(reset),
+					node = self[Pair(r, c)]
+					color = ""
+					if path and node in path:
+						color = "\x1B[7;32m"
+					if start == node:
+						color = "\x1B[7;34m"
+					if goal == node:
+						color = "\x1B[7;35m"
+					if node in cset:
+						color = color or "\x1B[7;31m"
+						stdout.write(color + " x ")
+					elif node in oset:
+						color = color or "\x1B[7;33m"
+						stdout.write(color + " o ")
+					else:
+						stdout.write(color + " " + str(node.cost) + " ")
+				print reset
+	else:
+		def printastar(*argv):
+			pass
+	class OpenSet:
+		def __init__(self):
+			self.heap = []
+			self.set = set()
+		def push(self, node, fscore):
+			self.set.add(node)
+			heappush(self.heap, (fscore, node))
+		def pop(self):
+			node = heappop(self.heap)[1]
+			self.set.remove(node)
+			return node
+		def __contains__(self, node):
+			return node in self.set
+		def __len__(self):
+			return len(self.set)
 	class Node:
 		def __init__(self, grid, pair, cost):
 			self.grid = grid
