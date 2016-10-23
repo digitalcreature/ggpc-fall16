@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 from sys import stdin, stdout, argv
-# from itertools import *
 from collections import defaultdict
 from heapq import heappush, heappop
 import re
@@ -10,6 +9,21 @@ import re
 inf = 1e413 # why doesnt python have a builtin infinity constant???
 opt_verbose = "-v" in argv or "--verbose" in argv
 opt_graphic = "-g" in argv or "--graphic" in argv
+class PrioritySet:
+	def __init__(self):
+		self.heap = []
+		self.set = set()
+	def push(self, item, priority):
+		self.set.add(item)
+		heappush(self.heap, (priority, item))
+	def pop(self):
+		item = heappop(self.heap)[1]
+		self.set.remove(item)
+		return item
+	def __contains__(self, item):
+		return item in self.set
+	def __len__(self):
+		return len(self.set)
 class Pair(object):
 	__pattern = re.compile(r'\s*(\d+)\s+(\d+)')
 	__slots__ = ('r', 'c')
@@ -23,7 +37,7 @@ class Pair(object):
 		if m:
 			return Pair(m.group(1), m.group(2))
 	def __repr__(self):
-		return "(%d, %d)" % (self.r, self.c)
+		return "({}, {})".format(self.r, self.c)
 	def neighbors(self):
 		yield Pair(self.r + 1, self.c)
 		yield Pair(self.r - 1, self.c)
@@ -69,7 +83,7 @@ class Grid(dict):
 		gscore = defaultdict(lambda: inf)
 		def fscore(node):
 			return gscore[node] + self.heuristic(node, goal)
-		oset = self.OpenSet()
+		oset = PrioritySet()
 		cset = set()
 		gscore[start] = 0
 		oset.push(start, 0)
@@ -129,21 +143,6 @@ class Grid(dict):
 	else:
 		def printastar(*argv):
 			pass
-	class OpenSet:
-		def __init__(self):
-			self.heap = []
-			self.set = set()
-		def push(self, node, fscore):
-			self.set.add(node)
-			heappush(self.heap, (fscore, node))
-		def pop(self):
-			node = heappop(self.heap)[1]
-			self.set.remove(node)
-			return node
-		def __contains__(self, node):
-			return node in self.set
-		def __len__(self):
-			return len(self.set)
 	class Node:
 		def __init__(self, grid, pair, cost):
 			self.grid = grid
@@ -158,9 +157,9 @@ class Grid(dict):
 		def costto(self, other):
 			return abs(self.cost - other.cost) + 1
 		def __str__(self):
-			return "<%d>" % self.cost
+			return "<{}>".format(self.cost)
 		def __repr__(self):
-			return "<%r %d>" % (self.pair, self.cost)
+			return "<{!r} {}>".format(self.pair, self.cost)
 		def __hash__(self):
 			return id(self)
 if __name__ == "__main__":
