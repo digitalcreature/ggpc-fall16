@@ -125,6 +125,7 @@ class Grid(dict):
 	def printastar(self, oset, cset, start, goal, path = set()):
 		if not opt_verbose: return
 		print
+		reset = "\x1B[0m"
 		for r in xrange(self.rcount):
 			for c in xrange(self.ccount):
 				node = self[Pair(r, c)]
@@ -137,13 +138,13 @@ class Grid(dict):
 					color = "\x1B[7;35m"
 				if node in cset:
 					color = color or "\x1B[7;31m"
-					print "\x1B[0m" + color + "x",
+					print reset + color + " x",
 				elif node in oset:
 					color = color or "\x1B[7;33m"
-					print "\x1B[0m" + color + "o",
+					print reset + color + " o",
 				else:
-					print "\x1B[0m" + color + str(node.cost),
-			print "\x1B[0m"
+					print reset + color + " " + str(node.cost),
+			print reset
 	class Node:
 		def __init__(self, grid, pair, cost):
 			self.grid = grid
@@ -166,17 +167,14 @@ class Grid(dict):
 if __name__ == "__main__":
 	grid = Grid.read(stdin)
 	start = Pair.read(stdin)
-	goals = []
-	while True:
-		end = Pair.read(stdin)
-		if end:
-			goals.append(end)
-		else:
-			break
 	if opt_verbose:
 		print "grid:\t", str(grid).replace("\n", "\n\t")
 		print "start:\t", repr(grid[start])
-	for goal in goals:
-		if opt_verbose:
-			print "goal:\t", repr(grid[goal])
-		print grid.astar(start, goal)
+	while True:
+		goal = Pair.read(stdin)
+		if goal:
+			if opt_verbose:
+				print "goal:\t", repr(grid[goal])
+			print grid.astar(start, goal)
+		else:
+			break
