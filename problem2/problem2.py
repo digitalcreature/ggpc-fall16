@@ -1,13 +1,9 @@
 #!/usr/bin/env python
-
 from sys import stdin, stdout
-from inspect import isclass
 import re
-
 # Author: Tanner Grehawick
 # Email: tgrehawi@gmail.com
 # Problem 2: Stack-based Computer Architecture Simulation
-
 class Program:
 	p_instruction = re.compile(r'\s*([A-Z]+)\s+([+-]?\w*)')
 	p_label = re.compile(r'\s*(\w+):')
@@ -15,16 +11,12 @@ class Program:
 		this.instructions = []
 		this.labels = {}
 	def load(this, srcfile):
-		iclasses = {}	# dictionary mapping mnemonics => Instruction subclasses
-		for name, cls in globals().items():
-			if cls != Instruction and isclass(cls) and issubclass(cls, Instruction):
-				iclasses[name] = cls
 		for line in srcfile:
 			m = this.p_instruction.match(line)
 			if m:
 				name = m.group(1)
-				if iclasses[name]:
-					this.add(iclasses[name](m.group(2)))
+				if name in Instruction.Mnemonics:
+					this.add(Instruction.Mnemonics[name](m.group(2)))
 			else:
 				m = this.p_label.match(line)
 				if m:
@@ -54,6 +46,12 @@ class Label:
 	def __init__(this, name):
 		this.name = name
 class Instruction:
+	class __metaclass__(type):
+		def __init__(cls, name, bases, dict):
+			if not hasattr(cls, "Mnemonics"):
+				cls.Mnemonics = {}
+			else:
+				cls.Mnemonics[name] = cls
 	address = None	# the address at which this instruction occurs
 	def __init__(this, arg = None):
 		if arg:
@@ -124,9 +122,7 @@ class RETURN(Instruction):
 class HCF(Instruction):
 	def execute(this, stack):
 		return -1
-
 program = Program()
-
 program.load(stdin)
 program.link()
 program.run()
