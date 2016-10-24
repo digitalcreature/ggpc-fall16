@@ -154,6 +154,32 @@ class Grid(dict):
 							oset.push(neighbor, gscore_est)
 						prevnode[neighbor] = node
 						gscore[neighbor] = gscore_est
+	def dijkstra_start(self, start):
+		start = self[start]
+		gscore = defaultdict(lambda: inf)
+		oset = PrioritySet()
+		cset = set()
+		gscore[start] = 0
+		oset.push(start, 0)
+		start.prevnode = None
+		while len(oset) > 0:
+			node = oset.pop()
+			cset.add(node)
+			for neighbor in node.neighbors():
+				if neighbor not in cset:
+					gscore_est = gscore[node] + node.costto(neighbor)
+					if gscore_est < gscore[neighbor]:
+						if neighbor not in oset:
+							oset.push(neighbor, gscore_est)
+						neighbor.prevnode = node
+						gscore[neighbor] = gscore_est
+	def dijkstra_goal(self, goal):
+		node = self[goal]
+		cost = 0
+		while node.prevnode:
+			cost += node.costto(node.prevnode)
+			node = node.prevnode
+		return cost
 	if opt_graphic:
 		# ah, there it is. prints a graphical representation of the current state of the A* algorithm
 		# (only defined if the --graphic flag is passed)
@@ -193,6 +219,7 @@ class Grid(dict):
 if __name__ == "__main__":
 	grid = Grid.read(stdin)
 	start = Pair.read(stdin)
+	grid.dijkstra_start(start)
 	if opt_verbose:
 		print "grid:\t", str(grid).replace("\n", "\n\t")
 		print "start:\t", repr(grid[start])
@@ -201,6 +228,7 @@ if __name__ == "__main__":
 		if goal:
 			if opt_verbose:
 				print "goal:\t", repr(grid[goal])
-			print grid.astar(start, goal)
+			print grid.dijkstra_goal(goal)
+			# print grid.astar(start, goal)
 		else:
 			break
