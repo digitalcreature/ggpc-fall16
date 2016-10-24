@@ -164,6 +164,7 @@ class Grid(dict):
 		start.prevnode = None
 		while len(oset) > 0:
 			node = oset.pop()
+			self.printastar(oset, cset, gscore.get, start, None, node)
 			cset.add(node)
 			for neighbor in node.neighbors():
 				if neighbor not in cset:
@@ -175,10 +176,13 @@ class Grid(dict):
 						gscore[neighbor] = gscore_est
 	def dijkstra_goal(self, goal):
 		node = self[goal]
+		path = set()
 		cost = 0
 		while node.prevnode:
+			path.add(node)
 			cost += node.costto(node.prevnode)
 			node = node.prevnode
+		self.printastar((), (), int, node, self[goal], None, path)
 		return cost
 	if opt_graphic:
 		# ah, there it is. prints a graphical representation of the current state of the A* algorithm
