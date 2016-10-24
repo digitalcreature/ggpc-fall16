@@ -9,6 +9,7 @@ import re
 inf = 1e413 # why doesnt python have a builtin infinity constant???
 opt_verbose = "-v" in argv or "--verbose" in argv	#verbose option: -v or --verbose
 opt_graphic = "-g" in argv or "--graphic" in argv	#graphic option: -g or --graphic (try it, its cool)
+opt_astar = "-a" in argv or "--astar" in argv		#use astar instead of dijkstra: -a or --astar
 # simple heap-base set that keeps a sort order
 # (i use a set as well so its O(1) instead of O(n)
 #  to check if something is in the heap)
@@ -223,7 +224,8 @@ class Grid(dict):
 if __name__ == "__main__":
 	grid = Grid.read(stdin)
 	start = Pair.read(stdin)
-	grid.dijkstra_start(start)
+	if not opt_astar:
+		grid.dijkstra_start(start)
 	if opt_verbose:
 		print "grid:\t", str(grid).replace("\n", "\n\t")
 		print "start:\t", repr(grid[start])
@@ -232,7 +234,9 @@ if __name__ == "__main__":
 		if goal:
 			if opt_verbose:
 				print "goal:\t", repr(grid[goal])
-			print grid.dijkstra_goal(goal)
-			# print grid.astar(start, goal)
+			if opt_astar:
+				print grid.astar(start, goal)
+			else:
+				print grid.dijkstra_goal(goal)
 		else:
 			break
