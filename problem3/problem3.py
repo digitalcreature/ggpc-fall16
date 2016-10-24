@@ -7,6 +7,7 @@ import re
 # Email: tgrehawi@gmail.com
 # Problem 3: Navigating The Flash
 inf = 1e413 # why doesnt python have a builtin infinity constant???
+empty = () # empty collection
 opt_verbose = "-v" in argv or "--verbose" in argv	#verbose option: -v or --verbose
 opt_graphic = "-g" in argv or "--graphic" in argv	#graphic option: -g or --graphic (try it, its cool)
 opt_astar = "-a" in argv or "--astar" in argv		#use astar instead of dijkstra: -a or --astar
@@ -155,6 +156,7 @@ class Grid(dict):
 							oset.push(neighbor, gscore_est)
 						prevnode[neighbor] = node
 						gscore[neighbor] = gscore_est
+	# dijkstra algorithm: map the whole grid at once....
 	def dijkstra_start(self, start):
 		start = self[start]
 		gscore = defaultdict(lambda: inf)
@@ -175,6 +177,9 @@ class Grid(dict):
 							oset.push(neighbor, gscore_est)
 						neighbor.prevnode = node
 						gscore[neighbor] = gscore_est
+	# ...then get the path to any specific goal
+	# this should save time when testing lots of different goals, as you wont need to search the map each time
+	# instead, you just follow the [node.prevnode]'s!
 	def dijkstra_goal(self, goal):
 		node = self[goal]
 		path = set()
@@ -183,7 +188,7 @@ class Grid(dict):
 			path.add(node)
 			cost += node.costto(node.prevnode)
 			node = node.prevnode
-		self.printastar((), (), int, node, self[goal], None, path)
+		self.printastar(empty, empty, int, node, self[goal], None, path)
 		return cost
 	if opt_graphic:
 		# ah, there it is. prints a graphical representation of the current state of the A* algorithm
